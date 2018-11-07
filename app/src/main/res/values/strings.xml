@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Popular Movies</string>
+
+    <string name="loading">Loading...</string>
+    <string name="loadError">An error occured while loading data.</string>
+    <string name="noMovieError">No movie to display.</string>
+
+    <string name="popular">Most Popular</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="now_playing">Now Playing</string>
+    <string name="upcoming">Upcoming</string>
+
+    <string name="minutesAbbr">min</string>
+
 </resources>
