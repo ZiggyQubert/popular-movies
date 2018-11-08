@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -29,6 +30,7 @@ public class MovieDetails extends AppCompatActivity {
     ImageView detailsPosterView;
     TextView detailsTaglineView;
     TextView detailsYearView;
+    TextView detailsRatingView;
     TextView detailsLengthView;
     TextView detailsVotesView;
     TextView detailsGenresView;
@@ -42,12 +44,12 @@ public class MovieDetails extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_details);
 
-        //finds and sets up the poster image
         detailsBackgroundView = findViewById(R.id.detail_background);
         detailsPosterView = findViewById(R.id.detail_poster);
 
         detailsTaglineView = findViewById(R.id.detail_tagline);
         detailsYearView = findViewById(R.id.detail_year);
+        detailsRatingView = findViewById(R.id.detail_rating);
         detailsVotesView = findViewById(R.id.detail_votes);
         detailsLengthView = findViewById(R.id.detail_length);
         detailsGenresView = findViewById(R.id.detail_genres);
@@ -87,7 +89,9 @@ public class MovieDetails extends AppCompatActivity {
      */
     protected void setMovieInformation(Movie movieData) {
         selectedMovieData = movieData;
-        setTitle(movieData.getTitle());
+
+        String movieTitle = movieData.getTitle().trim();
+        setTitle(movieTitle);
 
         //set the poster
         Picasso.get()
@@ -102,8 +106,16 @@ public class MovieDetails extends AppCompatActivity {
                 .into(detailsBackgroundView);
 
         //sets all the movie information
-        displayInView(detailsTaglineView, movieData.getTagline());
+
+        //if the tagline is the same as the title don't show the tagline, removes all non standard alpha numeric characters for the comparison
+        String movieTagline = movieData.getTagline().trim();
+        String titleForCompare = movieTitle.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+        String taglineForCompare = movieTagline.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+        String displayMovieTagline = titleForCompare.equalsIgnoreCase(taglineForCompare) ? "" : movieTagline;
+        displayInView(detailsTaglineView, displayMovieTagline);
+
         displayInView(detailsYearView, movieData.getReleaseYear());
+        displayInView(detailsRatingView, movieData.getMpaaRating());
 
         displayInView(detailsLengthView, movieData.getRuntime());
         displayInView(detailsVotesView, movieData.getVoteAverage());
@@ -120,11 +132,11 @@ public class MovieDetails extends AppCompatActivity {
      * @param newValue
      */
     private void displayInView(TextView view, String newValue) {
-        if (newValue != null && newValue.trim() != "") {
-            view.setText(newValue + "");
+        if (newValue != null && !newValue.trim().equals("")) {
+            view.setText(newValue);
             view.setVisibility(View.VISIBLE);
         } else {
-            view.setText("--");
+            view.setText("");
             view.setVisibility(View.GONE);
         }
     }

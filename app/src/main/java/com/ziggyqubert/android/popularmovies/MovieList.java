@@ -2,6 +2,7 @@ package com.ziggyqubert.android.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -24,8 +25,11 @@ import java.util.List;
 public class MovieList extends AppCompatActivity
         implements MovieAdapter.MovieAdapterOnClickHandler {
 
+    public static final Integer LAYOUT_COLUMNS_PORTRAIT = 3;
+    public static final Integer LAYOUT_COLUMNS_LANDSCAPE = 5;
+
     //number of columns to show in the grid view
-    public static Integer LAYOUT_COLUMNS = 3;
+    public static Integer LAYOUT_COLUMNS;
 
     //counter for infinite scroll loading
     private Integer currentMoviesPage;
@@ -47,6 +51,13 @@ public class MovieList extends AppCompatActivity
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_list);
+
+        Integer currentOrientation = getResources().getConfiguration().orientation;
+        if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            LAYOUT_COLUMNS = LAYOUT_COLUMNS_LANDSCAPE;
+        } else {
+            LAYOUT_COLUMNS = LAYOUT_COLUMNS_PORTRAIT;
+        }
 
         //sets up the loading values
         initialLoadingProgressBarView = findViewById(R.id.pb_page_loading_spinner);

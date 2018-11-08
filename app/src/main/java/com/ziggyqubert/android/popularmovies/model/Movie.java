@@ -1,5 +1,6 @@
 package com.ziggyqubert.android.popularmovies.model;
 
+import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -29,6 +30,7 @@ public class Movie implements Serializable {
     private static String IMAGE_BASE_URI = "http://image.tmdb.org/t/p/";
     private static String IMAGE_POSTER_SIZE_URI = "w185";
     private static String IMAGE_BACKDROP_SIZE_URI = "w780";
+    private static String RELEASE_COUNTRY_CODE = "US";
 
     //movie properties, dirived from the JSON returned by the service call
     private Integer id;
@@ -52,6 +54,8 @@ public class Movie implements Serializable {
     private Integer voteCount;
     private Double voteAverage;
     private Double popularity;
+
+    private String mpaaRating;
 
     private List<String> genres;
 
@@ -100,6 +104,8 @@ public class Movie implements Serializable {
         popularity = DataParsers.safeGetDoubleFromJson(jsonData, "popularity");
 
         genres = DataParsers.safeGetStringArrayFromJson(jsonData, "genres", "name");
+
+        mpaaRating = DataParsers.safeGetRatingString(jsonData, RELEASE_COUNTRY_CODE);
     }
 
     public Integer getId() {
@@ -153,5 +159,9 @@ public class Movie implements Serializable {
 
     public String getGenres() {
         return TextUtils.join(", ", genres);
+    }
+
+    public String getMpaaRating() {
+        return mpaaRating;
     }
 }

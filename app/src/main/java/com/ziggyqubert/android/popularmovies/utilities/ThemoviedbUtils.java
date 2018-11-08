@@ -33,6 +33,9 @@ public class ThemoviedbUtils {
     //holds the API key read in from the build config
     private static final String THEMOVIEDB_APIKEY_VALUE = BuildConfig.THEMOVIEDB_V3_APIKEY;
 
+    private static final String THEMOVIEDB_LANGUAGE_PARAM = "language";
+    private static final String THEMOVIEDB_LANGUAGE_VALUE = "en";
+
     //the page paramater name
     private static final String THEMOVIEDB_PAGE_PARAM = "page";
     //base url for the api
@@ -48,6 +51,7 @@ public class ThemoviedbUtils {
 
         //adds the api key to the request
         Uri builtUri = Uri.parse(requestUrl.toString()).buildUpon()
+                .appendQueryParameter(THEMOVIEDB_LANGUAGE_PARAM, THEMOVIEDB_LANGUAGE_VALUE)
                 .appendQueryParameter(THEMOVIEDB_APIKEY_PARAM, THEMOVIEDB_APIKEY_VALUE)
                 .build();
 
@@ -189,7 +193,10 @@ public class ThemoviedbUtils {
      */
     public static Movie fetchMovieDetails(Integer movieId) {
         Log.i(PopularMoviesApp.APP_TAG, "fetchMovieDetails for: " + movieId);
-        Uri fetchMovieListUri = Uri.parse(THEMOVIEDB_API_BASE_URL + "/3/movie/" + movieId);
+        Uri fetchMovieListUri = Uri.parse(THEMOVIEDB_API_BASE_URL + "/3/movie/" + movieId)
+                .buildUpon()
+                .appendQueryParameter("append_to_response", "release_dates")
+                .build();
         JSONObject responseJson = makeRequest(fetchMovieListUri);
 
         return new Movie(responseJson);

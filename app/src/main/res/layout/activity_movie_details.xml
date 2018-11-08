@@ -69,7 +69,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="10dp"
-                        android:text="112min"
                         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                         android:textStyle="italic" />
 
@@ -78,14 +77,22 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="10dp"
-                        android:text="6.6/10"
                         android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+                    <TextView
+                        android:id="@+id/detail_rating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingLeft="4dp"
+                        android:paddingRight="4dp"
+                        android:background="#ffffff"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Title.Inverse" />
 
                     <TextView
                         android:id="@+id/detail_genres"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="6.6/10"
                         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
                 </LinearLayout>
@@ -96,7 +103,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
-                android:text="content here"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
         </LinearLayout>

@@ -143,6 +143,39 @@ public class DataParsers {
     }
 
     /**
+     * gets the rating for a particular country code, note this gets the rating for the first release regardless of what type of release it was, see https://developers.themoviedb.org/3/movies/get-movie-release-dates for exact specs on the release property
+     *
+     * @param jsonData
+     * @param countryCode
+     * @return
+     */
+    public static String safeGetRatingString(JSONObject jsonData, String countryCode) {
+        String rating = null;
+        if (jsonData.has("release_dates")) {
+            try {
+                JSONObject releaseData = jsonData.getJSONObject("release_dates");
+                if (releaseData.has("results")) {
+                    JSONArray releasesList = releaseData.getJSONArray("results");
+
+                    for (int i = 0; i < releasesList.length(); i++) {
+                        JSONObject releasesForCountry = releasesList.getJSONObject(i);
+                        if (safeGetStringFromJson(releasesForCountry, "iso_3166_1").equalsIgnoreCase(countryCode)) {
+                            JSONArray releaseDates = releasesForCountry.getJSONArray("release_dates");
+                            rating = safeGetStringFromJson(releaseDates.getJSONObject(0), "certification");
+                            break;
+                        }
+                    }
+
+                }
+            } catch (JSONException e) {
+                Log.e(PopularMoviesApp.APP_TAG, "Error parsing rating for " + countryCode);
+                e.printStackTrace();
+            }
+        }
+        return rating;
+    }
+
+    /**
      * function to get generic data value from json
      *
      * @param jsonData
