@@ -25,7 +25,7 @@ public class MovieList extends AppCompatActivity
         implements MovieAdapter.MovieAdapterOnClickHandler {
 
     //number of columns to show in the grid view
-    public static Integer LAYOUT_COLUMNS = 2;
+    public static Integer LAYOUT_COLUMNS = 3;
 
     //counter for infinite scroll loading
     private Integer currentMoviesPage;

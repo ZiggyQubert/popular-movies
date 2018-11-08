@@ -89,38 +89,64 @@ public class MovieDetails extends AppCompatActivity {
         selectedMovieData = movieData;
         setTitle(movieData.getTitle());
 
-        //set the image
+        //set the poster
         Picasso.get()
                 .load(movieData.getPosterUrl().toString())
                 //error image taken from http://icons-for-free.com/
-                .error(R.drawable.movie_not_found)
+                .error(R.drawable.movie_not_found_details)
                 .into(detailsPosterView);
 
+        //sets the background image
         Picasso.get()
                 .load(movieData.getBackdropUrl().toString())
                 .into(detailsBackgroundView);
 
-        detailsTaglineView.setText(movieData.getTagline());
-        //display the release year
-        Date releaseDate = movieData.getReleaseDate();
-        String releaseYearString = new SimpleDateFormat("yyyy").format(releaseDate);
-        detailsYearView.setText(releaseYearString);
+        //sets all the movie information
+        displayInView(detailsTaglineView, movieData.getTagline());
+        displayInView(detailsYearView, movieData.getReleaseYear());
 
-        detailsLengthView.setText(movieData.getRuntime() + getString(R.string.minutesAbbr));
-        detailsVotesView.setText(movieData.getVoteAverage() + "/10");
+        displayInView(detailsLengthView, movieData.getRuntime());
+        displayInView(detailsVotesView, movieData.getVoteAverage());
 
-        detailsGenresView.setText("");
-        List<String> genres = movieData.getGenres();
-        Boolean first = true;
-        for (String genre : genres) {
-            if (!first) {
-                detailsGenresView.append(", ");
-            }
-            detailsGenresView.append(genre);
-            first = false;
+        displayInView(detailsGenresView, movieData.getGenres());
+
+        displayInView(detailsOverviewView, movieData.getOverview());
+    }
+
+    /**
+     * handles displaying string values in the view and showing or hiding the view as necessary
+     *
+     * @param view
+     * @param newValue
+     */
+    private void displayInView(TextView view, String newValue) {
+        if (newValue != null && newValue.trim() != "") {
+            view.setText(newValue + "");
+            view.setVisibility(View.VISIBLE);
+        } else {
+            view.setText("--");
+            view.setVisibility(View.GONE);
         }
+    }
 
-        detailsOverviewView.setText(movieData.getOverview());
+    /**
+     * handles displaying int values in the view and showing or hiding the view as necessary
+     *
+     * @param view
+     * @param newValue
+     */
+    private void displayInView(TextView view, Integer newValue) {
+        displayInView(view, newValue.toString());
+    }
+
+    /**
+     * handles displaying double values in the view and showing or hiding the view as necessary
+     *
+     * @param view
+     * @param newValue
+     */
+    private void displayInView(TextView view, Double newValue) {
+        displayInView(view, newValue.toString());
     }
 
 

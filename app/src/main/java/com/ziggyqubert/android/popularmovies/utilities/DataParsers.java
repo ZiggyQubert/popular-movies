@@ -43,6 +43,7 @@ public class DataParsers {
 
     /**
      * parses the movie list from the raw json response
+     *
      * @param jsonResponseData
      * @return
      */
@@ -56,5 +57,112 @@ public class DataParsers {
         }
 
         return parseMovieList(movieList);
+    }
+
+    /**
+     * safely gets a string from json
+     *
+     * @param jsonData
+     * @param propertyName
+     * @return
+     */
+    public static String safeGetStringFromJson(JSONObject jsonData, String propertyName) {
+        return safeGetFromJson(jsonData, propertyName, "").toString();
+    }
+
+    /**
+     * safely gets an Int from json
+     *
+     * @param jsonData
+     * @param propertyName
+     * @return
+     */
+    public static Integer safeGetIntFromJson(JSONObject jsonData, String propertyName) {
+        Object numberProperty = safeGetFromJson(jsonData, propertyName, null);
+        try {
+            return Integer.parseInt(numberProperty.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * safely gets a double from json
+     *
+     * @param jsonData
+     * @param propertyName
+     * @return
+     */
+    public static Double safeGetDoubleFromJson(JSONObject jsonData, String propertyName) {
+        Object numberProperty = safeGetFromJson(jsonData, propertyName, null);
+        try {
+            return Double.parseDouble(numberProperty.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * safely gets a bool from json
+     *
+     * @param jsonData
+     * @param propertyName
+     * @return
+     */
+    public static Boolean safeGetBoolFromJson(JSONObject jsonData, String propertyName) {
+        Object boolVal = safeGetFromJson(jsonData, propertyName, false);
+        try {
+            if ((Boolean) boolVal == true) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Error e) {
+            return false;
+        }
+    }
+
+    public static List<String> safeGetStringArrayFromJson(JSONObject jsonData, String propertyName, String subProperty) {
+        List<String> stringArray = new ArrayList<String>();
+        if (jsonData.has(propertyName)) {
+            try {
+                //parses all the genre ids
+                JSONArray genreJsonArray = jsonData.getJSONArray("genres");
+                for (int i = 0; i < genreJsonArray.length(); i++) {
+                    JSONObject value = genreJsonArray.getJSONObject(i);
+                    if (value.has(subProperty)) {
+                        stringArray.add(safeGetStringFromJson(value, subProperty));
+                    }
+                }
+            } catch (JSONException e) {
+                Log.e(PopularMoviesApp.APP_TAG, "Error parsing stringArray " + propertyName);
+                e.printStackTrace();
+            }
+        }
+        return stringArray;
+    }
+
+    /**
+     * function to get generic data value from json
+     *
+     * @param jsonData
+     * @param propertyName
+     * @param defaultValue
+     * @return
+     */
+    public static Object safeGetFromJson(JSONObject jsonData, String propertyName, Object defaultValue) {
+        Object propValue = null;
+        if (jsonData.has(propertyName)) {
+            try {
+                propValue = jsonData.get(propertyName);
+            } catch (JSONException e) {
+                Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
+                e.printStackTrace();
+            }
+        }
+        if (propValue == null) {
+            propValue = defaultValue;
+        }
+        return propValue;
     }
 }

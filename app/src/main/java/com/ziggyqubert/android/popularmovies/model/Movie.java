@@ -1,8 +1,10 @@
 package com.ziggyqubert.android.popularmovies.model;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.ziggyqubert.android.popularmovies.PopularMoviesApp;
+import com.ziggyqubert.android.popularmovies.utilities.DataParsers;
 import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
 
 import org.json.JSONArray;
@@ -60,68 +62,50 @@ public class Movie implements Serializable {
      */
     public Movie(JSONObject jsonData) {
         //sets the internal data properties based on the passed in JSON object
+        id = DataParsers.safeGetIntFromJson(jsonData, "id");
+
+        title = DataParsers.safeGetStringFromJson(jsonData, "title");
+        origionalTitle = DataParsers.safeGetStringFromJson(jsonData, "original_title");
+        origionalLanguage = DataParsers.safeGetStringFromJson(jsonData, "original_language");
+        tagline = DataParsers.safeGetStringFromJson(jsonData, "tagline");
+
+        String releaseDataText = DataParsers.safeGetStringFromJson(jsonData, "release_date");
+        if (releaseDataText != "") {
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat(ThemoviedbUtils.DATE_FORMAT);
+                releaseDate = dateFormat.parse(releaseDataText);
+            } catch (ParseException e) {
+                Log.e(PopularMoviesApp.APP_TAG, "Error parsing date");
+                e.printStackTrace();
+            }
+        }
+        overview = DataParsers.safeGetStringFromJson(jsonData, "overview");
+
+        //builds the image urls
         try {
-            id = jsonData.getInt("id");
-            title = jsonData.getString("title");
-            origionalTitle = jsonData.getString("original_title");
-            origionalLanguage = jsonData.getString("original_language");
-            if (jsonData.has("tagline")) {
-                tagline = jsonData.getString("tagline");
-            }
-
-            String releaseDataText = jsonData.getString("release_date");
-            SimpleDateFormat dateFormat = new SimpleDateFormat(ThemoviedbUtils.DATE_FORMAT);
-
-            releaseDate = dateFormat.parse(releaseDataText);
-            overview = jsonData.getString("overview");
-
-            //builds the image urls
-            String posterPath = jsonData.getString("poster_path");
+            String posterPath = DataParsers.safeGetStringFromJson(jsonData, "poster_path");
             posterUrl = new URL(IMAGE_BASE_URI + IMAGE_POSTER_SIZE_URI + posterPath);
-            String backdropPath = jsonData.getString("backdrop_path");
+            String backdropPath = DataParsers.safeGetStringFromJson(jsonData, "backdrop_path");
             backdropUrl = new URL(IMAGE_BASE_URI + IMAGE_BACKDROP_SIZE_URI + backdropPath);
-
-            hasVideo = jsonData.getBoolean("video");
-            isAdult = jsonData.getBoolean("adult");
-
-            if (jsonData.has("runtime")) {
-                runtime = jsonData.getInt("runtime");
-            }
-
-            voteCount = jsonData.getInt("vote_count");
-            voteAverage = jsonData.getDouble("vote_average");
-            popularity = jsonData.getDouble("popularity");
-
-            //parses all the genre ids
-            genres = new ArrayList<String>();
-            if (jsonData.has("genres")) {
-                JSONArray genreJsonArray = jsonData.getJSONArray("genres");
-                for (int i = 0; i < genreJsonArray.length(); i++) {
-                    JSONObject value = genreJsonArray.getJSONObject(i);
-                    genres.add(value.getString("name"));
-                }
-            }
-
-        } catch (JSONException e) {
-            Log.e(PopularMoviesApp.APP_TAG, "Error parsing Movie JSON");
-            e.printStackTrace();
         } catch (MalformedURLException e) {
             Log.e(PopularMoviesApp.APP_TAG, "Error creating URL");
             e.printStackTrace();
-        } catch (ParseException e) {
-
         }
+
+        hasVideo = DataParsers.safeGetBoolFromJson(jsonData, "video");
+        isAdult = DataParsers.safeGetBoolFromJson(jsonData, "adult");
+        runtime = DataParsers.safeGetIntFromJson(jsonData, "runtime");
+        voteCount = DataParsers.safeGetIntFromJson(jsonData, "vote_count");
+        voteAverage = DataParsers.safeGetDoubleFromJson(jsonData, "vote_average");
+        popularity = DataParsers.safeGetDoubleFromJson(jsonData, "popularity");
+
+        genres = DataParsers.safeGetStringArrayFromJson(jsonData, "genres", "name");
     }
 
     public Integer getId() {
         return id;
     }
 
-    /**
-     * gets the title
-     *
-     * @return
-     */
     public String getTitle() {
         return title;
     }
@@ -134,11 +118,6 @@ public class Movie implements Serializable {
         return backdropUrl;
     }
 
-    /**
-     * Gets the poster URL
-     *
-     * @return
-     */
     public URL getPosterUrl() {
         return posterUrl;
     }
@@ -147,19 +126,32 @@ public class Movie implements Serializable {
         return releaseDate;
     }
 
+    public Integer getReleaseYear() {
+        String releaseYearString = new SimpleDateFormat("yyyy").format(releaseDate);
+        return Integer.parseInt(releaseYearString);
+    }
+
     public String getOverview() {
         return overview;
     }
 
-    public Integer getRuntime() {
-        return runtime;
+    public String getRuntime() {
+        if (runtime != null && runtime > 0) {
+            return runtime + "min";
+        } else {
+            return "";
+        }
     }
 
-    public Double getVoteAverage() {
-        return voteAverage;
+    public String getVoteAverage() {
+        if (voteAverage != null && voteAverage > 0) {
+            return voteAverage + "/10";
+        } else {
+            return "";
+        }
     }
 
-    public List<String> getGenres() {
-        return genres;
+    public String getGenres() {
+        return TextUtils.join(", ", genres);
     }
 }
