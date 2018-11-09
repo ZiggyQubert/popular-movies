@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,21 +78,26 @@ public class ThemoviedbUtils {
 
         //converts the response to a json object
         JSONObject jsonResponse = null;
-        try {
-            jsonResponse = new JSONObject(requestResponse);
-        } catch (JSONException e) {
-            Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
-            e.printStackTrace();
-        }
+        if (requestResponse != null) {
+            try {
+                jsonResponse = new JSONObject(requestResponse);
+            } catch (JSONException e) {
+                Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
+                e.printStackTrace();
+            }
 
-        //logs out the response
-        Log.i(PopularMoviesApp.APP_TAG, "Request Complete: " + url.toString());
-        try {
-            Log.i(PopularMoviesApp.APP_TAG, jsonResponse.toString(2));
-        } catch (JSONException e) {
-            Log.i(PopularMoviesApp.APP_TAG, "Failed to stringify JSON");
+            Log.i(PopularMoviesApp.APP_TAG, "Request Complete: " + url.toString());
+            if (jsonResponse != null) {
+                //logs out the response
+                try {
+                    Log.i(PopularMoviesApp.APP_TAG, jsonResponse.toString(2));
+                } catch (JSONException e) {
+                    Log.i(PopularMoviesApp.APP_TAG, "Failed to stringify JSON");
+                }
+            } else {
+                Log.i(PopularMoviesApp.APP_TAG, "-- NO RESPONSE BODY --");
+            }
         }
-
         return jsonResponse;
     }
 
@@ -104,6 +110,9 @@ public class ThemoviedbUtils {
      */
     public static String getResponseFromHttpUrl(URL url) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setConnectTimeout(5000);
+        urlConnection.setReadTimeout(5000);
+
         try {
             InputStream in = urlConnection.getInputStream();
 
@@ -116,6 +125,8 @@ public class ThemoviedbUtils {
             } else {
                 return null;
             }
+        } catch (SocketTimeoutException e) {
+            return null;
         } finally {
             urlConnection.disconnect();
         }
@@ -182,7 +193,11 @@ public class ThemoviedbUtils {
 
         JSONObject responseJson = makeRequest(fetchMovieListUri);
 
-        return DataParsers.parseMovieList(responseJson);
+        if (responseJson == null) {
+            return null;
+        } else {
+            return DataParsers.parseMovieList(responseJson);
+        }
     }
 
     /**
@@ -197,8 +212,13 @@ public class ThemoviedbUtils {
                 .buildUpon()
                 .appendQueryParameter("append_to_response", "release_dates")
                 .build();
+
         JSONObject responseJson = makeRequest(fetchMovieListUri);
 
-        return new Movie(responseJson);
+        if (responseJson == null) {
+            return null;
+        } else {
+            return new Movie(responseJson);
+        }
     }
 }
