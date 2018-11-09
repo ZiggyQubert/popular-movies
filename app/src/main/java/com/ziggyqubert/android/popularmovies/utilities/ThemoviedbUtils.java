@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class ThemoviedbUtils {
+public final class ThemoviedbUtils {
 
     public static final String SORT_TOP_RATED = "top_rated";
     public static final String SORT_MOST_POPULAR = "popular";
@@ -41,6 +41,9 @@ public class ThemoviedbUtils {
     private static final String THEMOVIEDB_PAGE_PARAM = "page";
     //base url for the api
     public static final String THEMOVIEDB_API_BASE_URL = "http://api.themoviedb.org";
+
+    private ThemoviedbUtils() {
+    }
 
     /**
      * Generic method to make a request, will append the API key to all requests

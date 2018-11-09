@@ -188,6 +188,7 @@ public class MovieDetails extends AppCompatActivity {
         protected Movie doInBackground(Integer... movieIds) {
             Integer movieIdToLoad = movieIds[0];
             Movie movieData;
+            //fetching the movie details here as we need more information on the movie then we get in the list call
             movieData = ThemoviedbUtils.fetchMovieDetails(movieIdToLoad);
             return movieData;
         }
