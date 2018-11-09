@@ -22,9 +22,9 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Holds the model for a single movie
+ * Holds the model for a single movie, note removing Serializable as its not actualy being used
  */
-public class Movie implements Serializable {
+public class Movie {
 
     //static properties used internally
     private static String IMAGE_BASE_URI = "http://image.tmdb.org/t/p/";
