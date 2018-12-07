@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -20,19 +21,30 @@ import com.ziggyqubert.android.popularmovies.model.Movie;
 import com.ziggyqubert.android.popularmovies.utilities.EndlessRecyclerOnScrollListener;
 import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
 
+import java.io.Serializable;
 import java.util.List;
 
 public class MovieList extends AppCompatActivity
         implements MovieAdapter.MovieAdapterOnClickHandler {
 
+    public static final Integer MOVIE_LIST_LOADER_ID = 0;
+
     public static final Integer LAYOUT_COLUMNS_PORTRAIT = 3;
     public static final Integer LAYOUT_COLUMNS_LANDSCAPE = 5;
+
+    public static final String SAVED_MOVIE_SORT_TYPE_KEY = "saveMovieSortType";
+    public static final String SAVED_CURRENT_MOVIES_PAGE_KEY = "saveCurrentMoviesPage";
+    public static final String SAVED_MOVIE_LIST_DATA_KEY = "saveMovieListData";
+
 
     //number of columns to show in the grid view
     public static Integer LAYOUT_COLUMNS;
 
     //counter for infinite scroll loading
     private Integer currentMoviesPage;
+    //currently selected movie sort type, see constants in The
+    private String movieSortType;
+
     private RecyclerView movieRecyclerView;
     private MovieAdapter movieAdapter;
     private GridLayoutManager layoutManager;
@@ -43,8 +55,9 @@ public class MovieList extends AppCompatActivity
     private ProgressBar progressBarView;
     private TextView errorMessageView;
 
-    //currently selected movie sort type, see constants in The
-    private String movieSortType;
+    private SwipeRefreshLayout swipeRefreshLayout;
+
+    boolean initialLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,18 +88,68 @@ public class MovieList extends AppCompatActivity
         endlesMovieScroll = new EndlesMovieScroll();
         movieRecyclerView.addOnScrollListener(endlesMovieScroll);
 
-        //sets up the content loading
-        showMoviesBy(ThemoviedbUtils.SORT_MOST_POPULAR);
+        swipeRefreshLayout = findViewById(R.id.movieList_swipeRefresh);
+        swipeRefreshLayout.setOnRefreshListener(
+                new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        Log.i(PopularMoviesApp.APP_TAG, "onRefresh called from SwipeRefreshLayout");
+                        resetMovieData();
+                        showLoading();
+                        showMoviesBy(movieSortType, false);
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                }
+        );
+
+        //if loading from a saved instance load the data from the saved instance state
+        if (savedInstanceState != null) {
+
+            Log.i(PopularMoviesApp.APP_TAG, "Load activity from saved instance state");
+
+            resetMovieData();
+
+            if (savedInstanceState.containsKey(SAVED_MOVIE_SORT_TYPE_KEY)) {
+                movieSortType = savedInstanceState.getString(SAVED_MOVIE_SORT_TYPE_KEY);
+            }
+            setTitle(getStringResourceByName(movieSortType));
+
+            if (savedInstanceState.containsKey(SAVED_CURRENT_MOVIES_PAGE_KEY)) {
+                currentMoviesPage = savedInstanceState.getInt(SAVED_CURRENT_MOVIES_PAGE_KEY);
+            }
+
+            if (savedInstanceState.containsKey(SAVED_MOVIE_LIST_DATA_KEY)) {
+                final List<Movie> savedMovieList = (List<Movie>) savedInstanceState.getSerializable(SAVED_MOVIE_LIST_DATA_KEY);
+                addDataToMovieAdapter(savedMovieList);
+//                initialLoad = false;
+            } else {
+                showMoviesBy(movieSortType);
+            }
+        } else {
+            Log.i(PopularMoviesApp.APP_TAG, "Load activity with defaults");
+            showMoviesBy(ThemoviedbUtils.SORT_MOST_POPULAR);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        Log.i(PopularMoviesApp.APP_TAG, "onSaveInstanceState");
+
+        outState.putString(SAVED_MOVIE_SORT_TYPE_KEY, movieSortType);
+        outState.putInt(SAVED_CURRENT_MOVIES_PAGE_KEY, currentMoviesPage);
+        outState.putSerializable(SAVED_MOVIE_LIST_DATA_KEY, (Serializable) movieAdapter.getAllItems());
     }
 
     /**
      * clears the movie data and resets the scrolling / data load
      */
     private void resetMovieData() {
-        movieAdapter.clearMovieData();
         layoutManager.scrollToPositionWithOffset(0, 0);
-        currentMoviesPage = 1;
+        currentMoviesPage = 0;
         endlesMovieScroll.reset();
+        movieAdapter.clearMovieData();
         initialLoadingProgressBarView.setVisibility(View.VISIBLE);
     }
 
@@ -108,11 +171,16 @@ public class MovieList extends AppCompatActivity
      * @param sortByValue
      */
     public void showMoviesBy(String sortByValue) {
-        if (movieSortType != sortByValue) {
+        showMoviesBy(sortByValue, true);
+    }
+
+    public void showMoviesBy(String sortByValue, boolean loadNextPage) {
+        if (movieSortType != sortByValue || movieAdapter.getItemCount() < 1) {
             Log.i(PopularMoviesApp.APP_TAG, "Setting sort to " + sortByValue);
+            showLoading();
             movieSortType = sortByValue;
             resetMovieData();
-            new PopulateMovieQueryTask().execute(currentMoviesPage);
+            loadNextPageOfMovies();
             setTitle(getStringResourceByName(sortByValue));
         }
     }
@@ -135,6 +203,38 @@ public class MovieList extends AppCompatActivity
     }
 
     /**
+     * Loads the next page of movies
+     */
+    public void loadNextPageOfMovies() {
+        //incriments the movie page count
+        currentMoviesPage++;
+        Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieSortType + " pg: " + currentMoviesPage);
+        progressBarView.setVisibility(View.VISIBLE);
+        //performs the loading action
+        new PopulateMovieQueryTask().execute(currentMoviesPage);
+    }
+
+    public void addDataToMovieAdapter(final List<Movie> newMovieData) {
+        // hides the loading / progress indicators
+        showSuccess();
+
+        //if data was loaded add it to the adapter
+        if (newMovieData != null && newMovieData.size() > 0) {
+            Log.i(PopularMoviesApp.APP_TAG, "addDataToMovieAdapter ADDING CONTENT");
+
+            showContent();
+            movieRecyclerView.post(new Runnable() {
+                public void run() {
+                    movieAdapter.addMovieData(newMovieData);
+                }
+            });
+        } else if (currentMoviesPage < 2) {
+            //if the first page then show an error
+            showError();
+        }
+    }
+
+    /**
      * set up the endless scroll class for the movie list
      */
     public class EndlesMovieScroll extends EndlessRecyclerOnScrollListener {
@@ -143,12 +243,24 @@ public class MovieList extends AppCompatActivity
          */
         @Override
         public void onLoadMore() {
-            //incriment the page number
-            currentMoviesPage++;
-            Log.i(PopularMoviesApp.APP_TAG, "Load page " + currentMoviesPage);
+            Log.i(PopularMoviesApp.APP_TAG, "onLoadMore " + movieSortType + " pg: " + currentMoviesPage);
             //start the loading task for the current page
-            new PopulateMovieQueryTask().execute(currentMoviesPage);
+            loadNextPageOfMovies();
         }
+    }
+
+    public void showLoading() {
+        movieRecyclerView.setVisibility(View.GONE);
+        errorMessageView.setVisibility(View.GONE);
+        initialLoadingProgressBarView.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * shows the success state
+     */
+    public void showSuccess() {
+        initialLoadingProgressBarView.setVisibility(View.GONE);
+        progressBarView.setVisibility(View.GONE);
     }
 
     /**
@@ -169,17 +281,9 @@ public class MovieList extends AppCompatActivity
 
     /**
      * Async task to load the popular movies data, takes the page of movie data to load, returns a list of movies
+     * using this instead of the asyncloader as issues with multiple requests happening at once
      */
     public class PopulateMovieQueryTask extends AsyncTask<Integer, Void, List<Movie>> {
-
-        /**
-         * shows the load spinner
-         */
-        @Override
-        protected void onPreExecute() {
-            progressBarView.setVisibility(View.VISIBLE);
-            super.onPreExecute();
-        }
 
         /**
          * runs the query to fetch data
@@ -189,6 +293,7 @@ public class MovieList extends AppCompatActivity
          */
         @Override
         protected List<Movie> doInBackground(Integer... pageNumbers) {
+            Log.i(PopularMoviesApp.APP_TAG, "doInBackground " + movieSortType + " pg: " + currentMoviesPage);
             Integer pageNumberToLoad = pageNumbers[0];
             List<Movie> movieList;
             movieList = ThemoviedbUtils.fetchMovieList(movieSortType, pageNumberToLoad);
@@ -198,23 +303,12 @@ public class MovieList extends AppCompatActivity
         /**
          * handles the response
          *
-         * @param popularMovieList
+         * @param movieList
          */
         @Override
-        protected void onPostExecute(List<Movie> popularMovieList) {
-
-            // hides the loading / progress indicators
-            initialLoadingProgressBarView.setVisibility(View.GONE);
-            progressBarView.setVisibility(View.GONE);
-
-            //if data was loaded add it to the adapter
-            if (popularMovieList != null && popularMovieList.size() > 0) {
-                showContent();
-                movieAdapter.addMovieData(popularMovieList);
-            } else if (currentMoviesPage == 1) {
-                //if the first page then show an error
-                showError();
-            }
+        protected void onPostExecute(List<Movie> movieList) {
+            Log.i(PopularMoviesApp.APP_TAG, "onPostExecute " + movieSortType + " pg: " + currentMoviesPage);
+            addDataToMovieAdapter(movieList);
         }
     }
 
@@ -225,6 +319,12 @@ public class MovieList extends AppCompatActivity
         /* Use the inflater's inflate method to inflate our menu layout to this menu */
         inflater.inflate(R.menu.sort_menu, menu);
         /* Return true so that the menu is displayed in the Toolbar */
+
+        //sets teh selected menu item
+        String menuItemIdString = "action_sort_" + movieSortType;
+        int menuItemResourceId = this.getResources().getIdentifier(menuItemIdString, "id", getPackageName());
+        menu.findItem(menuItemResourceId).setChecked(true);
+
         return true;
     }
 
@@ -252,13 +352,13 @@ public class MovieList extends AppCompatActivity
                 newSortBy = ThemoviedbUtils.SORT_UPCOMING;
                 break;
 
-            case R.id.action_sort_most_popular:
+            case R.id.action_sort_popular:
             default:
                 newSortBy = ThemoviedbUtils.SORT_MOST_POPULAR;
                 break;
         }
         item.setChecked(true);
-        showMoviesBy(newSortBy);
+        showMoviesBy(newSortBy, false);
         return true;
     }
 }

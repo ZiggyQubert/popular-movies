@@ -1,10 +1,11 @@
 package com.ziggyqubert.android.popularmovies;
 
+import android.app.LoaderManager;
+import android.content.AsyncTaskLoader;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -15,13 +16,13 @@ import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 import com.ziggyqubert.android.popularmovies.model.Movie;
+import com.ziggyqubert.android.popularmovies.utilities.MovieDetailsAsyncLoader;
 import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+public class MovieDetails extends AppCompatActivity
+        implements LoaderManager.LoaderCallbacks<Movie> {
 
-public class MovieDetails extends AppCompatActivity {
+    Integer MOVIE_DETAILS_LOADER_ID = 1;
 
     Movie selectedMovieData;
 
@@ -38,6 +39,18 @@ public class MovieDetails extends AppCompatActivity {
 
     ProgressBar detailsLoadingSpinner;
     ScrollView detailsMovieContnetView;
+
+    Integer passedMovieId;
+
+
+    /**
+     * gets the movie id that was passed to the details screen
+     *
+     * @return
+     */
+    public Integer getPassedMovieId() {
+        return passedMovieId;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,15 +76,34 @@ public class MovieDetails extends AppCompatActivity {
 
         //get the movie data from the intent
         if (intentThatStartedThisActivity.hasExtra(Intent.EXTRA_UID)) {
-            Integer passedMovieId = intentThatStartedThisActivity.getIntExtra(Intent.EXTRA_UID, 0);
+            passedMovieId = intentThatStartedThisActivity.getIntExtra(Intent.EXTRA_UID, 0);
             if (passedMovieId > 0) {
-                new FetchMovieDetails().execute(passedMovieId);
+
+                //instance state is saved, but curently not doing anything, movie data is cached in the loader so no need to double cache it in the instance state
+                if (savedInstanceState != null) {
+                    Log.i(PopularMoviesApp.APP_TAG, "Load activity from saved instance state");
+                } else {
+                    Log.i(PopularMoviesApp.APP_TAG, "Load activity with defaults");
+                }
+
+                LoaderManager.LoaderCallbacks<Movie> callback = MovieDetails.this;
+                Bundle bundleForLoader = null;
+                detailsLoadingSpinner.setVisibility(View.VISIBLE);
+                detailsMovieContnetView.setVisibility(View.INVISIBLE);
+                detailsBackgroundView.setVisibility(View.INVISIBLE);
+                getLoaderManager().initLoader(MOVIE_DETAILS_LOADER_ID, bundleForLoader, callback);
             } else {
                 showMovieNotLoaded();
             }
         } else {
             showMovieNotLoaded();
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.i(PopularMoviesApp.APP_TAG, "onSaveInstanceState");
     }
 
     /**
@@ -163,55 +195,35 @@ public class MovieDetails extends AppCompatActivity {
 
 
     /**
-     * Async task to load the popular movies data, takes the page of movie data to load, returns a list of movies
+     * sets the movie data for the activity
+     *
+     * @param movieData
      */
-    public class FetchMovieDetails extends AsyncTask<Integer, Void, Movie> {
+    private void setMovieData(Movie movieData) {
+        detailsLoadingSpinner.setVisibility(View.GONE);
+        detailsMovieContnetView.setVisibility(View.VISIBLE);
+        detailsBackgroundView.setVisibility(View.VISIBLE);
 
-        /**
-         * shows the load spinner
-         */
-        @Override
-        protected void onPreExecute() {
-            detailsLoadingSpinner.setVisibility(View.VISIBLE);
-            detailsMovieContnetView.setVisibility(View.INVISIBLE);
-            detailsBackgroundView.setVisibility(View.INVISIBLE);
-            super.onPreExecute();
+        //if data was loaded add it to the adapter
+        if (movieData != null) {
+            setMovieInformation(movieData);
+        } else {
+            showMovieNotLoaded();
         }
+    }
 
-        /**
-         * runs the query to fetch data
-         *
-         * @param movieIds
-         * @return
-         */
-        @Override
-        protected Movie doInBackground(Integer... movieIds) {
-            Integer movieIdToLoad = movieIds[0];
-            Movie movieData;
-            //fetching the movie details here as we need more information on the movie then we get in the list call
-            movieData = ThemoviedbUtils.fetchMovieDetails(movieIdToLoad);
-            return movieData;
-        }
+    @Override
+    public Loader<Movie> onCreateLoader(int i, Bundle bundle) {
+        return new MovieDetailsAsyncLoader(this);
+    }
 
-        /**
-         * handles the response
-         *
-         * @param movieData
-         */
-        @Override
-        protected void onPostExecute(Movie movieData) {
+    @Override
+    public void onLoadFinished(Loader<Movie> loader, Movie movieData) {
+        setMovieData(movieData);
+    }
 
-            // hides the loading / progress indicators
-            detailsLoadingSpinner.setVisibility(View.GONE);
-            detailsMovieContnetView.setVisibility(View.VISIBLE);
-            detailsBackgroundView.setVisibility(View.VISIBLE);
+    @Override
+    public void onLoaderReset(Loader<Movie> loader) {
 
-            //if data was loaded add it to the adapter
-            if (movieData != null) {
-                setMovieInformation(movieData);
-            } else {
-                showMovieNotLoaded();
-            }
-        }
     }
 }

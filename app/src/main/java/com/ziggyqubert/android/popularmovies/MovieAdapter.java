@@ -37,6 +37,14 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
         mClickHandeler = clickHandler;
     }
 
+    /**
+     * gets the current list of all movies that have ben loaded
+     * @return
+     */
+    public List<Movie> getAllItems() {
+        return movieList;
+    }
+
     @NonNull
     @Override
     public MovieAdapterViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
@@ -104,6 +112,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
     public void clearMovieData() {
         movieList.clear();
     }
+
     /**
      * Sets the movie data to the specified data
      *

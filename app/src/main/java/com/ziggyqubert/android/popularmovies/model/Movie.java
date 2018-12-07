@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Holds the model for a single movie, note removing Serializable as its not actualy being used
  */
-public class Movie {
+public class Movie implements Serializable {
 
     //static properties used internally
     private static String IMAGE_BASE_URI = "http://image.tmdb.org/t/p/";

@@ -4,7 +4,7 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/action_sort_most_popular"
+            android:id="@+id/action_sort_popular"
             android:checked="true"
             android:orderInCategory="10"
             android:title="@string/popular"
