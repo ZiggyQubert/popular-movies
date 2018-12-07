@@ -39,6 +39,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
     /**
      * gets the current list of all movies that have ben loaded
+     *
      * @return
      */
     public List<Movie> getAllItems() {
@@ -111,6 +112,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
      */
     public void clearMovieData() {
         movieList.clear();
+        notifyDataSetChanged();
     }
 
     /**

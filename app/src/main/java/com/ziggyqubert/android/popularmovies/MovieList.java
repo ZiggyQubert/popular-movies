@@ -61,6 +61,7 @@ public class MovieList extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_list);
 
+        //sets the number of columns based on the orientation
         Integer currentOrientation = getResources().getConfiguration().orientation;
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             LAYOUT_COLUMNS = LAYOUT_COLUMNS_LANDSCAPE;
@@ -81,9 +82,11 @@ public class MovieList extends AppCompatActivity
         movieAdapter = new MovieAdapter(this);
         movieRecyclerView.setAdapter(movieAdapter);
 
+        //sets up the endless scrolling
         endlesMovieScroll = new EndlesMovieScroll();
         movieRecyclerView.addOnScrollListener(endlesMovieScroll);
 
+        //sets up the refresh swipe
         swipeRefreshLayout = findViewById(R.id.movieList_swipeRefresh);
         swipeRefreshLayout.setOnRefreshListener(
                 new SwipeRefreshLayout.OnRefreshListener() {
@@ -117,7 +120,6 @@ public class MovieList extends AppCompatActivity
             if (savedInstanceState.containsKey(SAVED_MOVIE_LIST_DATA_KEY)) {
                 final List<Movie> savedMovieList = (List<Movie>) savedInstanceState.getSerializable(SAVED_MOVIE_LIST_DATA_KEY);
                 addDataToMovieAdapter(savedMovieList);
-//                initialLoad = false;
             } else {
                 showMoviesBy(movieSortType);
             }
@@ -142,10 +144,13 @@ public class MovieList extends AppCompatActivity
      * clears the movie data and resets the scrolling / data load
      */
     private void resetMovieData() {
-        layoutManager.scrollToPositionWithOffset(0, 0);
         currentMoviesPage = 0;
         endlesMovieScroll.reset();
         movieAdapter.clearMovieData();
+
+        movieRecyclerView.getRecycledViewPool().clear();
+
+        layoutManager.scrollToPositionWithOffset(0, 0);
         initialLoadingProgressBarView.setVisibility(View.VISIBLE);
     }
 
