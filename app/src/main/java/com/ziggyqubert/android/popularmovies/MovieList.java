@@ -27,8 +27,6 @@ import java.util.List;
 public class MovieList extends AppCompatActivity
         implements MovieAdapter.MovieAdapterOnClickHandler {
 
-    public static final Integer MOVIE_LIST_LOADER_ID = 0;
-
     public static final Integer LAYOUT_COLUMNS_PORTRAIT = 3;
     public static final Integer LAYOUT_COLUMNS_LANDSCAPE = 5;
 
@@ -56,8 +54,6 @@ public class MovieList extends AppCompatActivity
     private TextView errorMessageView;
 
     private SwipeRefreshLayout swipeRefreshLayout;
-
-    boolean initialLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
