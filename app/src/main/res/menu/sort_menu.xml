@@ -4,7 +4,7 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/action_sort_most_popular"
+            android:id="@+id/action_sort_popular"
             android:checked="true"
             android:orderInCategory="10"
             android:title="@string/popular"
@@ -26,6 +26,12 @@
             android:id="@+id/action_sort_upcoming"
             android:orderInCategory="40"
             android:title="@string/upcoming"
+            app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_sort_favorites"
+            android:orderInCategory="40"
+            android:title="@string/favorites"
             app:showAsAction="never" />
     </group>
 </menu>

@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.ziggyqubert.android.popularmovies.PopularMoviesApp;
+import com.ziggyqubert.android.popularmovies.database.FavoritesEntry;
 import com.ziggyqubert.android.popularmovies.utilities.DataParsers;
 import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
 
@@ -59,6 +60,10 @@ public class Movie {
 
     private List<String> genres;
 
+    private List<MoviePreview> videos;
+
+    private List<MovieReview> reviews;
+
     /**
      * constructor to build the object out of a passed in json object
      *
@@ -106,6 +111,22 @@ public class Movie {
         genres = DataParsers.safeGetStringArrayFromJson(jsonData, "genres", "name");
 
         mpaaRating = DataParsers.safeGetRatingString(jsonData, RELEASE_COUNTRY_CODE);
+
+        videos = DataParsers.safeGetVideosFromJson(jsonData, "videos");
+        reviews = DataParsers.safeGetReviewsFromJson(jsonData, "reviews");
+
+    }
+
+    public Movie(FavoritesEntry favorite) {
+        this.id = favorite.getMovieId();
+        this.title = favorite.getTitle();
+        this.posterUrl = favorite.getPosterUrl();
+    }
+
+    public Movie(Integer id, String title, URL posterUrl) {
+        this.id = id;
+        this.title = title;
+        this.posterUrl = posterUrl;
     }
 
     public Integer getId() {
@@ -163,5 +184,13 @@ public class Movie {
 
     public String getMpaaRating() {
         return mpaaRating;
+    }
+
+    public List<MoviePreview> getVideos() {
+        return videos;
+    }
+
+    public List<MovieReview> getReviews() {
+        return reviews;
     }
 }

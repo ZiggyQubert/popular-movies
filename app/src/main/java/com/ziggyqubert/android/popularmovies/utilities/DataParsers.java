@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.ziggyqubert.android.popularmovies.PopularMoviesApp;
 import com.ziggyqubert.android.popularmovies.model.Movie;
+import com.ziggyqubert.android.popularmovies.model.MoviePreview;
+import com.ziggyqubert.android.popularmovies.model.MovieReview;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -122,6 +124,14 @@ public class DataParsers {
         }
     }
 
+    /**
+     * gets a list of strings from json
+     *
+     * @param jsonData
+     * @param propertyName
+     * @param subProperty
+     * @return
+     */
     public static List<String> safeGetStringArrayFromJson(JSONObject jsonData, String propertyName, String subProperty) {
         List<String> stringArray = new ArrayList<String>();
         if (jsonData.has(propertyName)) {
@@ -175,6 +185,75 @@ public class DataParsers {
         return rating;
     }
 
+    public static List<MovieReview> safeGetReviewsFromJson(JSONObject jsonData, String propertyName) {
+        List<MovieReview> reviewList = new ArrayList<MovieReview>();
+
+        JSONArray jsonReviewValues = null;
+        if (jsonData.has(propertyName)) {
+            try {
+                if (jsonData.getJSONObject(propertyName).has("results")) {
+                    jsonReviewValues = jsonData.getJSONObject(propertyName).getJSONArray("results");
+                } else {
+                    jsonReviewValues = jsonData.getJSONArray(propertyName);
+                }
+            } catch (JSONException e) {
+                Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
+                e.printStackTrace();
+            }
+        }
+
+
+        if (jsonReviewValues != null) {
+            for (int i = 0; i < jsonReviewValues.length(); i++) {
+                try {
+                    JSONObject reviewData = jsonReviewValues.getJSONObject(i);
+                    MovieReview review = new MovieReview(reviewData);
+                    reviewList.add(review);
+                } catch (JSONException e) {
+                    Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return reviewList;
+    }
+
+    public static List<MoviePreview> safeGetVideosFromJson(JSONObject jsonData, String propertyName) {
+        List<MoviePreview> videoList = new ArrayList<MoviePreview>();
+
+        JSONArray jsonVideoValues = null;
+        if (jsonData.has(propertyName)) {
+            try {
+                if (jsonData.getJSONObject(propertyName).has("results")) {
+                    jsonVideoValues = jsonData.getJSONObject(propertyName).getJSONArray("results");
+                } else {
+                    jsonVideoValues = jsonData.getJSONArray(propertyName);
+                }
+            } catch (JSONException e) {
+                Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
+                e.printStackTrace();
+            }
+        }
+
+        if (jsonVideoValues != null) {
+            for (int i = 0; i < jsonVideoValues.length(); i++) {
+                try {
+                    JSONObject videoData = jsonVideoValues.getJSONObject(i);
+                    MoviePreview preview = new MoviePreview(videoData);
+                    //ensures that only youtube videos are returned
+                    if (preview.getSite().equals(ThemoviedbUtils.SITE_YOUTUBE)) {
+                        videoList.add(preview);
+                    }
+                } catch (JSONException e) {
+                    Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
+                    e.printStackTrace();
+                }
+            }
+        }
+        return videoList;
+    }
+
     /**
      * function to get generic data value from json
      *
@@ -198,4 +277,5 @@ public class DataParsers {
         }
         return propValue;
     }
+
 }
