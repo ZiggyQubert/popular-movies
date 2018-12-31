@@ -57,4 +57,5 @@ public class MovieListViewModel extends AndroidViewModel {
     public void setMovieList(List<Movie> movieList) {
         this.movieList = movieList;
     }
+
 }

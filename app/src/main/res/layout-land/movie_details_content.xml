@@ -14,10 +14,10 @@
             android:id="@+id/detail_poster"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_marginEnd="8dp"
             android:adjustViewBounds="true"
             android:scaleType="fitXY"
             tools:src="@drawable/movie_not_found_details" />
+
 
         <ScrollView
             android:layout_width="fill_parent"
@@ -106,16 +106,26 @@
                     app:layout_constraintTop_toBottomOf="@+id/detail_genres"
                     tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer aliquam felis turpis, vitae fringilla tortor auctor lacinia. Etiam euismod urna ut lorem finibus luctus. Suspendisse fermentum orci vel nisl scelerisque blandit. Praesent quis feugiat elit." />
 
+
                 <include
                     android:id="@+id/detail_trailers"
                     layout="@layout/movie_details_trailers"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintHorizontal_bias="0.0"
-                    app:layout_constraintStart_toStartOf="@+id/detail_overview"
+                    android:layout_weight="1"
+                    app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/detail_overview" />
+
+                <include
+                    android:id="@+id/detail_reviews"
+                    layout="@layout/movie_details_reviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_weight="1"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/detail_trailers" />
 
             </android.support.constraint.ConstraintLayout>
         </ScrollView>

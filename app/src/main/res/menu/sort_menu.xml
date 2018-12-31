@@ -27,5 +27,11 @@
             android:orderInCategory="40"
             android:title="@string/upcoming"
             app:showAsAction="never" />
+
+        <item
+            android:id="@+id/action_sort_favorites"
+            android:orderInCategory="40"
+            android:title="@string/favorites"
+            app:showAsAction="never" />
     </group>
 </menu>

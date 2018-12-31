@@ -10,16 +10,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginLeft="16dp"
-            android:text="@string/trailers"
+            android:text="@string/reviews"
             android:textAppearance="@style/TextAppearance.AppCompat.Title" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@android:color/darker_gray" />
-
         <android.support.v7.widget.RecyclerView
-            android:id="@+id/trailer_display_recyclerView"
+            android:id="@+id/review_display_recyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </LinearLayout>

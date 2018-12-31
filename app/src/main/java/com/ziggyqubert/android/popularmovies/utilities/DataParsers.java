@@ -241,7 +241,10 @@ public class DataParsers {
                 try {
                     JSONObject videoData = jsonVideoValues.getJSONObject(i);
                     MoviePreview preview = new MoviePreview(videoData);
-                    videoList.add(preview);
+                    //ensures that only youtube videos are returned
+                    if (preview.getSite().equals(ThemoviedbUtils.SITE_YOUTUBE)) {
+                        videoList.add(preview);
+                    }
                 } catch (JSONException e) {
                     Log.e(PopularMoviesApp.APP_TAG, "Error parsing JSON");
                     e.printStackTrace();

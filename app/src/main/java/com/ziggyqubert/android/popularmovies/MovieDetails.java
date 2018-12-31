@@ -1,24 +1,33 @@
 package com.ziggyqubert.android.popularmovies;
 
 import android.app.LoaderManager;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.Loader;
 import android.databinding.DataBindingUtil;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
-import com.ziggyqubert.android.popularmovies.databinding.ActivityMovieDetailsBinding;
+import com.ziggyqubert.android.popularmovies.database.FavoritesEntry;
+import com.ziggyqubert.android.popularmovies.databinding.MovieDetailsActivityBinding;
 import com.ziggyqubert.android.popularmovies.model.Movie;
 import com.ziggyqubert.android.popularmovies.model.MoviePreview;
+import com.ziggyqubert.android.popularmovies.model.MovieReview;
 import com.ziggyqubert.android.popularmovies.utilities.MovieDetailsAsyncLoader;
+import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
 
 import java.util.List;
 
@@ -32,12 +41,17 @@ public class MovieDetails extends AppCompatActivity
     ProgressBar detailsLoadingSpinner;
     View detailsMovieContnetView;
 
-    Integer passedMovieId;
+    MovieDetailsViewModel movieDetailsViewModel;
 
-    ActivityMovieDetailsBinding mBinding;
+    MovieDetailsActivityBinding mBinding;
 
     private RecyclerView trailerRecyclerView;
     private TrailerAdapter trailerAdapter;
+
+    private RecyclerView reviewRecyclerView;
+    private ReviewAdapter reviewAdapter;
+
+    private Menu favoritesMenu;
 
     /**
      * gets the movie id that was passed to the details screen
@@ -45,60 +59,107 @@ public class MovieDetails extends AppCompatActivity
      * @return
      */
     public Integer getPassedMovieId() {
-        return passedMovieId;
+        return movieDetailsViewModel.getPassedMovieId();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_movie_details);
+        setContentView(R.layout.movie_details_activity);
 
-        mBinding = DataBindingUtil.setContentView(this, R.layout.activity_movie_details);
+        movieDetailsViewModel = getViewModel();
+        mBinding = DataBindingUtil.setContentView(this, R.layout.movie_details_activity);
 
         detailsLoadingSpinner = findViewById(R.id.detail_loading_spinner);
         detailsMovieContnetView = findViewById(R.id.detail_movie_content);
 
 
-        //sets up the recycler view
+        //sets up the recycler view for trailers
         trailerRecyclerView = findViewById(R.id.trailer_display_recyclerView);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        trailerRecyclerView.setLayoutManager(layoutManager);
+        LinearLayoutManager trailerLayoutManager = new LinearLayoutManager(this);
+        trailerRecyclerView.setLayoutManager(trailerLayoutManager);
         trailerAdapter = new TrailerAdapter(this);
         trailerRecyclerView.setAdapter(trailerAdapter);
 
+        //sets up the recycler view for trailers
+        reviewRecyclerView = findViewById(R.id.review_display_recyclerView);
+        LinearLayoutManager reviewLayoutManager = new LinearLayoutManager(this);
+        reviewRecyclerView.setLayoutManager(reviewLayoutManager);
+        reviewAdapter = new ReviewAdapter();
+        reviewRecyclerView.setAdapter(reviewAdapter);
+
         Intent intentThatStartedThisActivity = getIntent();
 
-        //get the movie data from the intent
-        if (intentThatStartedThisActivity.hasExtra(Intent.EXTRA_UID)) {
-            passedMovieId = intentThatStartedThisActivity.getIntExtra(Intent.EXTRA_UID, 0);
+        if (movieDetailsViewModel.getPassedMovieId() == null && intentThatStartedThisActivity.hasExtra(Intent.EXTRA_UID)) {
+            Integer passedMovieId = intentThatStartedThisActivity.getIntExtra(Intent.EXTRA_UID, 0);
             if (passedMovieId > 0) {
-
-                //instance state is saved, but curently not doing anything, movie data is cached in the loader so no need to double cache it in the instance state
-                if (savedInstanceState != null) {
-                    Log.i(PopularMoviesApp.APP_TAG, "Load activity from saved instance state");
-                } else {
-                    Log.i(PopularMoviesApp.APP_TAG, "Load activity with defaults");
-                }
-
-                LoaderManager.LoaderCallbacks<Movie> callback = MovieDetails.this;
-                Bundle bundleForLoader = null;
-                detailsLoadingSpinner.setVisibility(View.VISIBLE);
-                detailsMovieContnetView.setVisibility(View.INVISIBLE);
-                mBinding.detailBackground.setVisibility(View.INVISIBLE);
-                getLoaderManager().initLoader(MOVIE_DETAILS_LOADER_ID, bundleForLoader, callback);
-            } else {
-                showMovieNotLoaded();
+                movieDetailsViewModel.setPassedMovieId(passedMovieId);
             }
-        } else {
-            showMovieNotLoaded();
         }
 
+        if (movieDetailsViewModel.getPassedMovieId() == null) {
+            showMovieNotLoaded();
+        } else {
+            LoaderManager.LoaderCallbacks<Movie> callback = MovieDetails.this;
+            Bundle bundleForLoader = null;
+            detailsLoadingSpinner.setVisibility(View.VISIBLE);
+            detailsMovieContnetView.setVisibility(View.INVISIBLE);
+            mBinding.detailBackground.setVisibility(View.INVISIBLE);
+            getLoaderManager().initLoader(MOVIE_DETAILS_LOADER_ID, bundleForLoader, callback);
+
+        }
+    }
+
+    private MovieDetailsViewModel getViewModel() {
+        MovieDetailsViewModel viewModel = ViewModelProviders.of(this).get(MovieDetailsViewModel.class);
+        return viewModel;
+    }
+
+    public void setFavoritesMenuButtons(Boolean isFavorite) {
+        if (isFavorite) {
+            favoritesMenu.findItem(R.id.action_add_favorite).setVisible(false);
+            favoritesMenu.findItem(R.id.action_remove_favorite).setVisible(true);
+        } else {
+            favoritesMenu.findItem(R.id.action_remove_favorite).setVisible(false);
+            favoritesMenu.findItem(R.id.action_add_favorite).setVisible(true);
+        }
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        Log.i(PopularMoviesApp.APP_TAG, "onSaveInstanceState");
+    public boolean onCreateOptionsMenu(Menu menu) {
+        /* Use AppCompatActivity's method getMenuInflater to get a handle on the menu inflater */
+        MenuInflater inflater = getMenuInflater();
+        /* Use the inflater's inflate method to inflate our menu layout to this menu */
+        inflater.inflate(R.menu.favorites_menu, menu);
+
+        favoritesMenu = menu;
+
+        movieDetailsViewModel.getFavoriteData().observe(this, new Observer<FavoritesEntry>() {
+            @Override
+            public void onChanged(@Nullable FavoritesEntry favoritesEntry) {
+                setFavoritesMenuButtons(favoritesEntry != null);
+            }
+        });
+
+        /* Return true so that the menu is displayed in the Toolbar */
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        //set the favorite status of the current movie
+        switch (id) {
+            case R.id.action_add_favorite:
+                movieDetailsViewModel.setFavorite(true, selectedMovieData);
+                break;
+
+            case R.id.action_remove_favorite:
+                movieDetailsViewModel.setFavorite(false, selectedMovieData);
+                break;
+        }
+        return true;
     }
 
     /**
@@ -159,6 +220,15 @@ public class MovieDetails extends AppCompatActivity
             trailerAdapter.setTrailerData(movieData.getVideos());
         } else {
             trailerArea.setVisibility(View.GONE);
+        }
+
+        List<MovieReview> reviewData = movieData.getReviews();
+        View reviewArea = findViewById(R.id.detail_reviews);
+        if (reviewData.size() > 0) {
+            reviewArea.setVisibility(View.VISIBLE);
+            reviewAdapter.setReviewData(movieData.getReviews());
+        } else {
+            reviewArea.setVisibility(View.GONE);
         }
     }
 
@@ -233,7 +303,10 @@ public class MovieDetails extends AppCompatActivity
     }
 
     @Override
-    public void onSelectTrailer(MoviePreview selectedMovie) {
-
+    public void onSelectTrailer(MoviePreview selectedtrailer) {
+        Log.i(PopularMoviesApp.APP_TAG, "Selected trailer: " + selectedtrailer.getName());
+        ThemoviedbUtils.openYoutubeVideo(this, selectedtrailer.getKey());
     }
+
+
 }

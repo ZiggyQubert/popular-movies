@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.ziggyqubert.android.popularmovies.PopularMoviesApp;
+import com.ziggyqubert.android.popularmovies.database.FavoritesEntry;
 import com.ziggyqubert.android.popularmovies.utilities.DataParsers;
 import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
 
@@ -116,6 +117,18 @@ public class Movie {
 
     }
 
+    public Movie(FavoritesEntry favorite) {
+        this.id = favorite.getMovieId();
+        this.title = favorite.getTitle();
+        this.posterUrl = favorite.getPosterUrl();
+    }
+
+    public Movie(Integer id, String title, URL posterUrl) {
+        this.id = id;
+        this.title = title;
+        this.posterUrl = posterUrl;
+    }
+
     public Integer getId() {
         return id;
     }
@@ -175,5 +188,9 @@ public class Movie {
 
     public List<MoviePreview> getVideos() {
         return videos;
+    }
+
+    public List<MovieReview> getReviews() {
+        return reviews;
     }
 }

@@ -1,5 +1,8 @@
 package com.ziggyqubert.android.popularmovies.utilities;
 
+import android.content.ActivityNotFoundException;
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 
@@ -26,8 +29,15 @@ public final class ThemoviedbUtils {
     public static final String SORT_MOST_POPULAR = "popular";
     public static final String SORT_NOW_PLAYING = "now_playing";
     public static final String SORT_UPCOMING = "upcoming";
+    public static final String SORT_FAVORITES = "favorites";
+
+    public static final String SITE_YOUTUBE = "YouTube";
 
     public static final String DATE_FORMAT = "yyyy-MM-dd";
+
+    public static final String VIDEO_YOUTUBE_APP_URI = "vnd.youtube:";
+    public static final String VIDEO_YOUTUBE_WEB_URI = "https://www.youtube.com/watch?v=";
+
 
     //the api query paramater
     private static final String THEMOVIEDB_APIKEY_PARAM = "api_key";
@@ -222,6 +232,25 @@ public final class ThemoviedbUtils {
             return null;
         } else {
             return new Movie(responseJson);
+        }
+    }
+
+    /**
+     * opens a youtube either in the app or in browser
+     *
+     * @param context
+     * @param key
+     */
+    public static void openYoutubeVideo(Context context, String key) {
+
+        Log.i(PopularMoviesApp.APP_TAG, "Launch youtube with key: " + key);
+
+        Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(VIDEO_YOUTUBE_APP_URI + key));
+        Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(VIDEO_YOUTUBE_WEB_URI + key));
+        try {
+            context.startActivity(appIntent);
+        } catch (ActivityNotFoundException ex) {
+            context.startActivity(webIntent);
         }
     }
 }

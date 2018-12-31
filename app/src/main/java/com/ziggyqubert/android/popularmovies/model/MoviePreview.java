@@ -14,7 +14,7 @@ public class MoviePreview {
 
     public MoviePreview(JSONObject jsonData) {
         id = DataParsers.safeGetStringFromJson(jsonData, "id");
-        key = DataParsers.safeGetStringFromJson(jsonData, "keyd");
+        key = DataParsers.safeGetStringFromJson(jsonData, "key");
         name = DataParsers.safeGetStringFromJson(jsonData, "name");
         site = DataParsers.safeGetStringFromJson(jsonData, "site");
         size = DataParsers.safeGetIntFromJson(jsonData, "size");
@@ -31,5 +31,9 @@ public class MoviePreview {
 
     public String getType() {
         return type;
+    }
+
+    public String getSite() {
+        return site;
     }
 }

@@ -1,5 +1,6 @@
 package com.ziggyqubert.android.popularmovies;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -20,11 +21,13 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.ziggyqubert.android.popularmovies.database.AppDatabase;
+import com.ziggyqubert.android.popularmovies.database.FavoritesEntry;
 import com.ziggyqubert.android.popularmovies.model.Movie;
 import com.ziggyqubert.android.popularmovies.utilities.EndlessRecyclerOnScrollListener;
 import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
 
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MovieList extends AppCompatActivity
@@ -49,11 +52,16 @@ public class MovieList extends AppCompatActivity
 
     private SwipeRefreshLayout swipeRefreshLayout;
 
+    private AppDatabase mDb;
+    private LiveData<List<FavoritesEntry>> favoritesEntrys;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_movie_list);
+        setContentView(R.layout.movie_list_activity);
+
+        mDb = AppDatabase.getInstance(getApplication().getApplicationContext());
 
         //sets the number of columns based on the orientation
         Integer currentOrientation = getResources().getConfiguration().orientation;
@@ -63,6 +71,7 @@ public class MovieList extends AppCompatActivity
             LAYOUT_COLUMNS = LAYOUT_COLUMNS_PORTRAIT;
         }
 
+        favoritesEntrys = null;
         //sets up the loading values
         initialLoadingProgressBarView = findViewById(R.id.pb_page_loading_spinner);
         progressBarView = findViewById(R.id.pb_loading_spinner);
@@ -102,6 +111,9 @@ public class MovieList extends AppCompatActivity
         if (movieListViewModel.getCurrentPage() < 1) {
             showMoviesBy(movieListViewModel.getSortType());
         } else {
+            if (movieListViewModel.getSortType() == ThemoviedbUtils.SORT_FAVORITES) {
+                setUpFavoritesObserver();
+            }
             showSuccess();
             showContent();
         }
@@ -176,16 +188,52 @@ public class MovieList extends AppCompatActivity
         startActivity(intentToStartDetailActivity);
     }
 
+    public void setUpFavoritesObserver() {
+        if (favoritesEntrys == null) {
+            favoritesEntrys = mDb.taskDao().loadAllFavorites();
+            favoritesEntrys.observe(this, new Observer<List<FavoritesEntry>>() {
+                @Override
+                public void onChanged(@Nullable List<FavoritesEntry> favoritesEntries) {
+                    List<Movie> movieList = new ArrayList<Movie>();
+                    for (int fvIdx = 0; fvIdx < favoritesEntries.size(); fvIdx++) {
+                        movieList.add(new Movie(favoritesEntries.get(fvIdx)));
+                    }
+                    movieAdapter.setMovieData(movieList);
+                    showSuccess();
+                    showContent();
+                }
+            });
+        }
+    }
+
+    public void removeFavoritesObserver() {
+        if (favoritesEntrys != null) {
+            favoritesEntrys.removeObservers(this);
+            favoritesEntrys = null;
+        }
+    }
+
     /**
      * Loads the next page of movies
      */
     public void loadNextPageOfMovies() {
-        //incriments the movie page count
         movieListViewModel.incrimentCurrentPage();
-        Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
-        progressBarView.setVisibility(View.VISIBLE);
-        //performs the loading action
-        new PopulateMovieQueryTask().execute(movieListViewModel.getCurrentPage());
+        if (movieListViewModel.getSortType() == ThemoviedbUtils.SORT_FAVORITES) {
+            if (movieListViewModel.getCurrentPage() == 1) {
+                Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
+
+                setUpFavoritesObserver();
+
+            }
+        } else {
+            removeFavoritesObserver();
+            //incriments the movie page count
+            movieListViewModel.incrimentCurrentPage();
+            Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
+            progressBarView.setVisibility(View.VISIBLE);
+            //performs the loading action
+            new PopulateMovieQueryTask().execute(movieListViewModel.getCurrentPage());
+        }
     }
 
     public void addDataToMovieAdapter(final List<Movie> newMovieData) {
@@ -326,6 +374,12 @@ public class MovieList extends AppCompatActivity
                 newSortBy = ThemoviedbUtils.SORT_UPCOMING;
                 break;
 
+            //the sort by top rated selection
+            case R.id.action_sort_favorites:
+                newSortBy = ThemoviedbUtils.SORT_FAVORITES;
+                break;
+
+            //sort by popular (the default)
             case R.id.action_sort_popular:
             default:
                 newSortBy = ThemoviedbUtils.SORT_MOST_POPULAR;
