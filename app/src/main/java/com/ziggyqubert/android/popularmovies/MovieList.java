@@ -1,9 +1,12 @@
 package com.ziggyqubert.android.popularmovies;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
+import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -30,21 +33,12 @@ public class MovieList extends AppCompatActivity
     public static final Integer LAYOUT_COLUMNS_PORTRAIT = 3;
     public static final Integer LAYOUT_COLUMNS_LANDSCAPE = 5;
 
-    public static final String SAVED_MOVIE_SORT_TYPE_KEY = "saveMovieSortType";
-    public static final String SAVED_CURRENT_MOVIES_PAGE_KEY = "saveCurrentMoviesPage";
-    public static final String SAVED_MOVIE_LIST_DATA_KEY = "saveMovieListData";
-
-
     //number of columns to show in the grid view
     public static Integer LAYOUT_COLUMNS;
 
-    //counter for infinite scroll loading
-    private Integer currentMoviesPage;
-    //currently selected movie sort type, see constants in The
-    private String movieSortType;
-
     private RecyclerView movieRecyclerView;
     private MovieAdapter movieAdapter;
+    private MovieListViewModel movieListViewModel;
     private GridLayoutManager layoutManager;
     private EndlesMovieScroll endlesMovieScroll;
 
@@ -95,56 +89,35 @@ public class MovieList extends AppCompatActivity
                         Log.i(PopularMoviesApp.APP_TAG, "onRefresh called from SwipeRefreshLayout");
                         resetMovieData();
                         showLoading();
-                        showMoviesBy(movieSortType, false);
+                        showMoviesBy(movieListViewModel.getSortType(), false);
                         swipeRefreshLayout.setRefreshing(false);
                     }
                 }
         );
 
-        //if loading from a saved instance load the data from the saved instance state
-        if (savedInstanceState != null) {
-
-            Log.i(PopularMoviesApp.APP_TAG, "Load activity from saved instance state");
-
-            resetMovieData();
-
-            if (savedInstanceState.containsKey(SAVED_MOVIE_SORT_TYPE_KEY)) {
-                movieSortType = savedInstanceState.getString(SAVED_MOVIE_SORT_TYPE_KEY);
-            }
-            setTitle(getStringResourceByName(movieSortType));
-
-            if (savedInstanceState.containsKey(SAVED_CURRENT_MOVIES_PAGE_KEY)) {
-                currentMoviesPage = savedInstanceState.getInt(SAVED_CURRENT_MOVIES_PAGE_KEY);
-            }
-
-            if (savedInstanceState.containsKey(SAVED_MOVIE_LIST_DATA_KEY)) {
-                final List<Movie> savedMovieList = (List<Movie>) savedInstanceState.getSerializable(SAVED_MOVIE_LIST_DATA_KEY);
-                addDataToMovieAdapter(savedMovieList);
-            } else {
-                showMoviesBy(movieSortType);
-            }
+        movieListViewModel = getViewModel();
+        Log.i(PopularMoviesApp.APP_TAG, "Load movie data from view model");
+        setTitle(getStringResourceByName(movieListViewModel.getSortType()));
+        movieAdapter.setMovieData(movieListViewModel.getMovieList());
+        if (movieListViewModel.getCurrentPage() < 1) {
+            showMoviesBy(movieListViewModel.getSortType());
         } else {
-            Log.i(PopularMoviesApp.APP_TAG, "Load activity with defaults");
-            showMoviesBy(ThemoviedbUtils.SORT_MOST_POPULAR);
+            showSuccess();
+            showContent();
         }
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        Log.i(PopularMoviesApp.APP_TAG, "onSaveInstanceState");
-
-        outState.putString(SAVED_MOVIE_SORT_TYPE_KEY, movieSortType);
-        outState.putInt(SAVED_CURRENT_MOVIES_PAGE_KEY, currentMoviesPage);
-        outState.putSerializable(SAVED_MOVIE_LIST_DATA_KEY, (Serializable) movieAdapter.getAllItems());
+    private MovieListViewModel getViewModel() {
+        MovieListViewModel viewModel = ViewModelProviders.of(this).get(MovieListViewModel.class);
+        return viewModel;
     }
+
 
     /**
      * clears the movie data and resets the scrolling / data load
      */
     private void resetMovieData() {
-        currentMoviesPage = 0;
+        movieListViewModel.resetCurrentPage();
         endlesMovieScroll.reset();
         movieAdapter.clearMovieData();
 
@@ -176,10 +149,10 @@ public class MovieList extends AppCompatActivity
     }
 
     public void showMoviesBy(String sortByValue, boolean loadNextPage) {
-        if (movieSortType != sortByValue || movieAdapter.getItemCount() < 1) {
+        if (movieListViewModel.getSortType() != sortByValue || movieAdapter.getItemCount() < 1) {
             Log.i(PopularMoviesApp.APP_TAG, "Setting sort to " + sortByValue);
             showLoading();
-            movieSortType = sortByValue;
+            movieListViewModel.setSortType(sortByValue);
             resetMovieData();
             loadNextPageOfMovies();
             setTitle(getStringResourceByName(sortByValue));
@@ -208,11 +181,11 @@ public class MovieList extends AppCompatActivity
      */
     public void loadNextPageOfMovies() {
         //incriments the movie page count
-        currentMoviesPage++;
-        Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieSortType + " pg: " + currentMoviesPage);
+        movieListViewModel.incrimentCurrentPage();
+        Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
         progressBarView.setVisibility(View.VISIBLE);
         //performs the loading action
-        new PopulateMovieQueryTask().execute(currentMoviesPage);
+        new PopulateMovieQueryTask().execute(movieListViewModel.getCurrentPage());
     }
 
     public void addDataToMovieAdapter(final List<Movie> newMovieData) {
@@ -229,7 +202,7 @@ public class MovieList extends AppCompatActivity
                     movieAdapter.addMovieData(newMovieData);
                 }
             });
-        } else if (currentMoviesPage < 2) {
+        } else if (movieListViewModel.getCurrentPage() < 2) {
             //if the first page then show an error
             showError();
         }
@@ -244,7 +217,7 @@ public class MovieList extends AppCompatActivity
          */
         @Override
         public void onLoadMore() {
-            Log.i(PopularMoviesApp.APP_TAG, "onLoadMore " + movieSortType + " pg: " + currentMoviesPage);
+            Log.i(PopularMoviesApp.APP_TAG, "onLoadMore " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
             //start the loading task for the current page
             loadNextPageOfMovies();
         }
@@ -294,10 +267,10 @@ public class MovieList extends AppCompatActivity
          */
         @Override
         protected List<Movie> doInBackground(Integer... pageNumbers) {
-            Log.i(PopularMoviesApp.APP_TAG, "doInBackground " + movieSortType + " pg: " + currentMoviesPage);
+            Log.i(PopularMoviesApp.APP_TAG, "doInBackground " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
             Integer pageNumberToLoad = pageNumbers[0];
             List<Movie> movieList;
-            movieList = ThemoviedbUtils.fetchMovieList(movieSortType, pageNumberToLoad);
+            movieList = ThemoviedbUtils.fetchMovieList(movieListViewModel.getSortType(), pageNumberToLoad);
             return movieList;
         }
 
@@ -308,7 +281,7 @@ public class MovieList extends AppCompatActivity
          */
         @Override
         protected void onPostExecute(List<Movie> movieList) {
-            Log.i(PopularMoviesApp.APP_TAG, "onPostExecute " + movieSortType + " pg: " + currentMoviesPage);
+            Log.i(PopularMoviesApp.APP_TAG, "onPostExecute " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
             addDataToMovieAdapter(movieList);
         }
     }
@@ -322,7 +295,7 @@ public class MovieList extends AppCompatActivity
         /* Return true so that the menu is displayed in the Toolbar */
 
         //sets teh selected menu item
-        String menuItemIdString = "action_sort_" + movieSortType;
+        String menuItemIdString = "action_sort_" + movieListViewModel.getSortType();
         int menuItemResourceId = this.getResources().getIdentifier(menuItemIdString, "id", getPackageName());
         menu.findItem(menuItemResourceId).setChecked(true);
 

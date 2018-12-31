@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Holds the model for a single movie, note removing Serializable as its not actualy being used
  */
-public class Movie implements Serializable {
+public class Movie {
 
     //static properties used internally
     private static String IMAGE_BASE_URI = "http://image.tmdb.org/t/p/";
@@ -58,6 +58,10 @@ public class Movie implements Serializable {
     private String mpaaRating;
 
     private List<String> genres;
+
+    private List<MoviePreview> videos;
+
+    private List<MovieReview> reviews;
 
     /**
      * constructor to build the object out of a passed in json object
@@ -106,6 +110,10 @@ public class Movie implements Serializable {
         genres = DataParsers.safeGetStringArrayFromJson(jsonData, "genres", "name");
 
         mpaaRating = DataParsers.safeGetRatingString(jsonData, RELEASE_COUNTRY_CODE);
+
+        videos = DataParsers.safeGetVideosFromJson(jsonData, "videos");
+        reviews = DataParsers.safeGetReviewsFromJson(jsonData, "reviews");
+
     }
 
     public Integer getId() {
@@ -163,5 +171,9 @@ public class Movie implements Serializable {
 
     public String getMpaaRating() {
         return mpaaRating;
+    }
+
+    public List<MoviePreview> getVideos() {
+        return videos;
     }
 }

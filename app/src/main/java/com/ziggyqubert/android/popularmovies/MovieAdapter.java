@@ -122,7 +122,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
      */
     public void setMovieData(List<Movie> movieListData) {
         clearMovieData();
-        addMovieData(movieListData);
+        movieList = movieListData;
+        notifyDataSetChanged();
     }
 
     /**

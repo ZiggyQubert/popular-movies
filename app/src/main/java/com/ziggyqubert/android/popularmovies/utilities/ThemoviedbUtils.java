@@ -213,7 +213,7 @@ public final class ThemoviedbUtils {
         Log.i(PopularMoviesApp.APP_TAG, "fetchMovieDetails for: " + movieId);
         Uri fetchMovieListUri = Uri.parse(THEMOVIEDB_API_BASE_URL + "/3/movie/" + movieId)
                 .buildUpon()
-                .appendQueryParameter("append_to_response", "release_dates")
+                .appendQueryParameter("append_to_response", "release_dates,reviews,videos")
                 .build();
 
         JSONObject responseJson = makeRequest(fetchMovieListUri);

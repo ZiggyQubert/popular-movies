@@ -1,47 +1,43 @@
 package com.ziggyqubert.android.popularmovies;
 
 import android.app.LoaderManager;
-import android.content.AsyncTaskLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.databinding.DataBindingUtil;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
+import com.ziggyqubert.android.popularmovies.databinding.ActivityMovieDetailsBinding;
 import com.ziggyqubert.android.popularmovies.model.Movie;
+import com.ziggyqubert.android.popularmovies.model.MoviePreview;
 import com.ziggyqubert.android.popularmovies.utilities.MovieDetailsAsyncLoader;
-import com.ziggyqubert.android.popularmovies.utilities.ThemoviedbUtils;
+
+import java.util.List;
 
 public class MovieDetails extends AppCompatActivity
-        implements LoaderManager.LoaderCallbacks<Movie> {
+        implements LoaderManager.LoaderCallbacks<Movie>, TrailerAdapter.TrailerAdapterOnClickHandler {
 
     Integer MOVIE_DETAILS_LOADER_ID = 1;
 
     Movie selectedMovieData;
 
-    ImageView detailsBackgroundView;
-
-    ImageView detailsPosterView;
-    TextView detailsTaglineView;
-    TextView detailsYearView;
-    TextView detailsRatingView;
-    TextView detailsLengthView;
-    TextView detailsVotesView;
-    TextView detailsGenresView;
-    TextView detailsOverviewView;
-
     ProgressBar detailsLoadingSpinner;
-    ScrollView detailsMovieContnetView;
+    View detailsMovieContnetView;
 
     Integer passedMovieId;
 
+    ActivityMovieDetailsBinding mBinding;
+
+    private RecyclerView trailerRecyclerView;
+    private TrailerAdapter trailerAdapter;
 
     /**
      * gets the movie id that was passed to the details screen
@@ -57,20 +53,18 @@ public class MovieDetails extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_details);
 
-        detailsBackgroundView = findViewById(R.id.detail_background);
-        detailsPosterView = findViewById(R.id.detail_poster);
-
-        detailsTaglineView = findViewById(R.id.detail_tagline);
-        detailsYearView = findViewById(R.id.detail_year);
-        detailsRatingView = findViewById(R.id.detail_rating);
-        detailsVotesView = findViewById(R.id.detail_votes);
-        detailsLengthView = findViewById(R.id.detail_length);
-        detailsGenresView = findViewById(R.id.detail_genres);
-
-        detailsOverviewView = findViewById(R.id.detail_overview);
+        mBinding = DataBindingUtil.setContentView(this, R.layout.activity_movie_details);
 
         detailsLoadingSpinner = findViewById(R.id.detail_loading_spinner);
         detailsMovieContnetView = findViewById(R.id.detail_movie_content);
+
+
+        //sets up the recycler view
+        trailerRecyclerView = findViewById(R.id.trailer_display_recyclerView);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        trailerRecyclerView.setLayoutManager(layoutManager);
+        trailerAdapter = new TrailerAdapter(this);
+        trailerRecyclerView.setAdapter(trailerAdapter);
 
         Intent intentThatStartedThisActivity = getIntent();
 
@@ -90,7 +84,7 @@ public class MovieDetails extends AppCompatActivity
                 Bundle bundleForLoader = null;
                 detailsLoadingSpinner.setVisibility(View.VISIBLE);
                 detailsMovieContnetView.setVisibility(View.INVISIBLE);
-                detailsBackgroundView.setVisibility(View.INVISIBLE);
+                mBinding.detailBackground.setVisibility(View.INVISIBLE);
                 getLoaderManager().initLoader(MOVIE_DETAILS_LOADER_ID, bundleForLoader, callback);
             } else {
                 showMovieNotLoaded();
@@ -98,6 +92,7 @@ public class MovieDetails extends AppCompatActivity
         } else {
             showMovieNotLoaded();
         }
+
     }
 
     @Override
@@ -130,12 +125,12 @@ public class MovieDetails extends AppCompatActivity
                 .load(movieData.getPosterUrl().toString())
                 //error image taken from http://icons-for-free.com/
                 .error(R.drawable.movie_not_found_details)
-                .into(detailsPosterView);
+                .into(mBinding.content.detailPoster);
 
         //sets the background image
         Picasso.get()
                 .load(movieData.getBackdropUrl().toString())
-                .into(detailsBackgroundView);
+                .into(mBinding.detailBackground);
 
         //sets all the movie information
 
@@ -144,17 +139,27 @@ public class MovieDetails extends AppCompatActivity
         String titleForCompare = movieTitle.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
         String taglineForCompare = movieTagline.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
         String displayMovieTagline = titleForCompare.equalsIgnoreCase(taglineForCompare) ? "" : movieTagline;
-        displayInView(detailsTaglineView, displayMovieTagline);
 
-        displayInView(detailsYearView, movieData.getReleaseYear());
-        displayInView(detailsRatingView, movieData.getMpaaRating());
+        displayInView(mBinding.content.detailTagline, displayMovieTagline);
 
-        displayInView(detailsLengthView, movieData.getRuntime());
-        displayInView(detailsVotesView, movieData.getVoteAverage());
+        displayInView(mBinding.content.detailYear, movieData.getReleaseYear());
+        displayInView(mBinding.content.detailRating, movieData.getMpaaRating());
 
-        displayInView(detailsGenresView, movieData.getGenres());
+        displayInView(mBinding.content.detailLength, movieData.getRuntime());
+        displayInView(mBinding.content.detailVotes, movieData.getVoteAverage());
 
-        displayInView(detailsOverviewView, movieData.getOverview());
+        displayInView(mBinding.content.detailGenres, movieData.getGenres());
+
+        displayInView(mBinding.content.detailOverview, movieData.getOverview());
+
+        List<MoviePreview> trailerData = movieData.getVideos();
+        View trailerArea = findViewById(R.id.detail_trailers);
+        if (trailerData.size() > 0) {
+            trailerArea.setVisibility(View.VISIBLE);
+            trailerAdapter.setTrailerData(movieData.getVideos());
+        } else {
+            trailerArea.setVisibility(View.GONE);
+        }
     }
 
     /**
@@ -201,8 +206,8 @@ public class MovieDetails extends AppCompatActivity
      */
     private void setMovieData(Movie movieData) {
         detailsLoadingSpinner.setVisibility(View.GONE);
-        detailsMovieContnetView.setVisibility(View.VISIBLE);
-        detailsBackgroundView.setVisibility(View.VISIBLE);
+        mBinding.detailMovieContent.setVisibility(View.VISIBLE);
+        mBinding.detailBackground.setVisibility(View.VISIBLE);
 
         //if data was loaded add it to the adapter
         if (movieData != null) {
@@ -224,6 +229,11 @@ public class MovieDetails extends AppCompatActivity
 
     @Override
     public void onLoaderReset(Loader<Movie> loader) {
+
+    }
+
+    @Override
+    public void onSelectTrailer(MoviePreview selectedMovie) {
 
     }
 }
