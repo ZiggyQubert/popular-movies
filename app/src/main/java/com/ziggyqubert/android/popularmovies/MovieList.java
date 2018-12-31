@@ -49,6 +49,7 @@ public class MovieList extends AppCompatActivity
     private ProgressBar initialLoadingProgressBarView;
     private ProgressBar progressBarView;
     private TextView errorMessageView;
+    private TextView noResultsView;
 
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -76,6 +77,7 @@ public class MovieList extends AppCompatActivity
         initialLoadingProgressBarView = findViewById(R.id.pb_page_loading_spinner);
         progressBarView = findViewById(R.id.pb_loading_spinner);
         errorMessageView = findViewById(R.id.tv_error_text);
+        noResultsView = findViewById(R.id.tv_no_results_text);
 
         //sets up the recycler view
         movieRecyclerView = findViewById(R.id.rv_movie_list);
@@ -218,18 +220,15 @@ public class MovieList extends AppCompatActivity
      */
     public void loadNextPageOfMovies() {
         movieListViewModel.incrimentCurrentPage();
-        if (movieListViewModel.getSortType() == ThemoviedbUtils.SORT_FAVORITES) {
+        Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
+        if (movieListViewModel.getSortType().equals(ThemoviedbUtils.SORT_FAVORITES)) {
             if (movieListViewModel.getCurrentPage() == 1) {
-                Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
-
                 setUpFavoritesObserver();
-
             }
         } else {
             removeFavoritesObserver();
             //incriments the movie page count
             movieListViewModel.incrimentCurrentPage();
-            Log.i(PopularMoviesApp.APP_TAG, "loadNextPageOfMovies " + movieListViewModel.getSortType() + " pg: " + movieListViewModel.getCurrentPage());
             progressBarView.setVisibility(View.VISIBLE);
             //performs the loading action
             new PopulateMovieQueryTask().execute(movieListViewModel.getCurrentPage());
@@ -244,10 +243,10 @@ public class MovieList extends AppCompatActivity
         if (newMovieData != null && newMovieData.size() > 0) {
             Log.i(PopularMoviesApp.APP_TAG, "addDataToMovieAdapter ADDING CONTENT");
 
-            showContent();
             movieRecyclerView.post(new Runnable() {
                 public void run() {
                     movieAdapter.addMovieData(newMovieData);
+                    showContent();
                 }
             });
         } else if (movieListViewModel.getCurrentPage() < 2) {
@@ -272,6 +271,7 @@ public class MovieList extends AppCompatActivity
     }
 
     public void showLoading() {
+        noResultsView.setVisibility(View.GONE);
         movieRecyclerView.setVisibility(View.GONE);
         errorMessageView.setVisibility(View.GONE);
         initialLoadingProgressBarView.setVisibility(View.VISIBLE);
@@ -289,7 +289,13 @@ public class MovieList extends AppCompatActivity
      * shows the content areas
      */
     public void showContent() {
-        movieRecyclerView.setVisibility(View.VISIBLE);
+        if (movieAdapter.getItemCount() > 0) {
+            movieRecyclerView.setVisibility(View.VISIBLE);
+            noResultsView.setVisibility(View.GONE);
+        } else {
+            noResultsView.setVisibility(View.VISIBLE);
+            movieRecyclerView.setVisibility(View.GONE);
+        }
         errorMessageView.setVisibility(View.GONE);
     }
 
@@ -297,6 +303,7 @@ public class MovieList extends AppCompatActivity
      * shows the error message
      */
     public void showError() {
+        noResultsView.setVisibility(View.GONE);
         movieRecyclerView.setVisibility(View.GONE);
         errorMessageView.setVisibility(View.VISIBLE);
     }

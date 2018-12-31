@@ -3,7 +3,7 @@
 
     <string name="loading">Loading...</string>
     <string name="loadError">An error occured while loading data.</string>
-    <string name="noMovieError">No movie to display.</string>
+    <string name="noMovieError">No movies to display.</string>
 
     <string name="popular">Most Popular</string>
     <string name="top_rated">Top Rated</string>

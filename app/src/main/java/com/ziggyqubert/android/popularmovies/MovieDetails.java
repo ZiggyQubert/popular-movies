@@ -76,6 +76,7 @@ public class MovieDetails extends AppCompatActivity
 
         //sets up the recycler view for trailers
         trailerRecyclerView = findViewById(R.id.trailer_display_recyclerView);
+        trailerRecyclerView.setNestedScrollingEnabled(false);
         LinearLayoutManager trailerLayoutManager = new LinearLayoutManager(this);
         trailerRecyclerView.setLayoutManager(trailerLayoutManager);
         trailerAdapter = new TrailerAdapter(this);
@@ -83,6 +84,7 @@ public class MovieDetails extends AppCompatActivity
 
         //sets up the recycler view for trailers
         reviewRecyclerView = findViewById(R.id.review_display_recyclerView);
+        reviewRecyclerView.setNestedScrollingEnabled(false);
         LinearLayoutManager reviewLayoutManager = new LinearLayoutManager(this);
         reviewRecyclerView.setLayoutManager(reviewLayoutManager);
         reviewAdapter = new ReviewAdapter();
